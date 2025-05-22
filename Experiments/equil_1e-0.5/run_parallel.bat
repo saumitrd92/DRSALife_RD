@@ -1,0 +1,17 @@
+start worker1.bat
+timeout 20
+start worker2.bat
+timeout 20
+start worker3.bat
+timeout 20
+start worker4.bat
+timeout 20
+start worker5.bat
+timeout 20
+start worker6.bat
+timeout 20
+start worker7.bat
+timeout 20
+start worker8.bat
+timeout 20
+start worker9.bat

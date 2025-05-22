@@ -3,7 +3,5 @@
 **/*.npy
 **/logs
 **/test
-**/*.h5
-/Experiments/
 **/*.pyc
 **/*.ini
