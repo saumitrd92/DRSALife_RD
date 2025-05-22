@@ -1,0 +1,12 @@
+/__pycache__
+**/*.npz
+**/*.npy
+**/logs
+**/test
+**/*.csv
+**/*.png
+**/*.h5
+/Experiments/
+/Visualizations/
+**/*.pyc
+**/*.ini
