@@ -10,9 +10,11 @@ In order to run the experiments (there are 17 experiments in total; 6 for gaussi
 -- Process overall results by going to the parent/root directory, first running result_pics_pde_processing.py, then running result_parallel_processing.py and finally running result_combine.py.
 
 Results:
+
 -- Results can be found in the Visualizations folder. In each experiment folder, snapshots of simulations using finite difference vs learnt CA model (best realization) can be found. Also, estimated PDE paramaters can be found in a csv file.
 
 -- A statistics of all results from all experiments can be found in Combined_results.xlsx. You need to refresh the excel sheets to display recently processed results.
 
 Author of Codebase
+
 -- Saumitra Dwivedi (saumitra.dwivedi@ntnu.no) https://orcid.org/0000-0001-7493-6950
