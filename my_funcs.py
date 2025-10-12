@@ -26,15 +26,15 @@ def laplacian(X, dx):
     center = X[1:-1, 1:-1]
     return (top + left + bottom + right - 4 * center) / dx**2
 
-def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1):
+def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1.0):
     """
     Simulate a reaction-diffusion PDE using finite differences and return sampled states.
 
     Parameters:
         size (int): Grid size.
         T (float): Total simulation time.
-        dt (float): Time step.
-        out_sample (int): Sampling interval.
+        dt (float): Time step interval.
+        out_sample (float): Sampling interval.
 
     Returns:
         np.ndarray: Array of sampled states [u, v] over time.
@@ -89,7 +89,7 @@ def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1):
 
     return np.asarray(fs_list)
 
-def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1):
+def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1.0):
     """
     Simulate a reaction-diffusion PDE from given initial conditions.
 
@@ -98,8 +98,8 @@ def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1):
         v (np.ndarray): Initial state for v.
         size (int): Grid size.
         T (float): Total simulation time.
-        dt (float): Time step.
-        out_sample (int): Sampling interval.
+        dt (float): Time step interval.
+        out_sample (float): Sampling interval.
 
     Returns:
         np.ndarray: Array of sampled states [u, v] over time.
