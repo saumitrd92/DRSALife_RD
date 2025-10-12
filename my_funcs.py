@@ -9,6 +9,16 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 
 def laplacian(X, dx):
+    """
+    Compute the discrete Laplacian of a 2D array using finite differences.
+
+    Parameters:
+        X (np.ndarray): 2D input array.
+        dx (float): Spatial step size.
+
+    Returns:
+        np.ndarray: Laplacian of X.
+    """
     top = X[0:-2, 1:-1]
     left = X[1:-1, 0:-2]
     bottom = X[2:, 1:-1]
@@ -16,7 +26,19 @@ def laplacian(X, dx):
     center = X[1:-1, 1:-1]
     return (top + left + bottom + right - 4 * center) / dx**2
 
-def pde_rd_for_data(size=100,T=20.0,dt=0.001,out_sample=1):
+def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1):
+    """
+    Simulate a reaction-diffusion PDE using finite differences and return sampled states.
+
+    Parameters:
+        size (int): Grid size.
+        T (float): Total simulation time.
+        dt (float): Time step.
+        out_sample (int): Sampling interval.
+
+    Returns:
+        np.ndarray: Array of sampled states [u, v] over time.
+    """
     a = 2.8e-4
     b = 5e-3
     tau = .1
@@ -67,7 +89,21 @@ def pde_rd_for_data(size=100,T=20.0,dt=0.001,out_sample=1):
 
     return np.asarray(fs_list)
 
-def my_pde_rd(u,v,size=100,T=20.0,dt=0.001,out_sample=1):
+def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1):
+    """
+    Simulate a reaction-diffusion PDE from given initial conditions.
+
+    Parameters:
+        u (np.ndarray): Initial state for u.
+        v (np.ndarray): Initial state for v.
+        size (int): Grid size.
+        T (float): Total simulation time.
+        dt (float): Time step.
+        out_sample (int): Sampling interval.
+
+    Returns:
+        np.ndarray: Array of sampled states [u, v] over time.
+    """
     a = 2.8e-4
     b = 5e-3
     tau = .1
@@ -113,10 +149,29 @@ def my_pde_rd(u,v,size=100,T=20.0,dt=0.001,out_sample=1):
 
 ## Histogram based image compare
 def hist_img_comp(img1, img2):
+    """
+    Compare two images using histogram correlation.
+
+    Parameters:
+        img1 (np.ndarray): First image.
+        img2 (np.ndarray): Second image.
+
+    Returns:
+        float: Histogram correlation score.
+    """
     bins = 10
     return np.round(cv2.compareHist(np.asarray(np.histogram(img1,range=(-1,1),bins=bins)[0]).reshape(bins,1).astype('float32'), np.asarray(np.histogram(img2,range=(-1,1),bins=bins)[0]).reshape(bins,1).astype('float32'),cv2.HISTCMP_CORREL),3)
 
 def show_patterns(tag,u,tstep,snr):
+    """
+    Display and save pattern images for simulation or observation.
+
+    Parameters:
+        tag (str): 'sim' for simulation, 'obs' for observation.
+        u (np.ndarray): Image data.
+        tstep (int): Time step.
+        snr (str): SNR identifier for saving.
+    """
     plt.figure(figsize=(8, 8))
     plt.gca().set_axis_off()
     plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -147,7 +202,18 @@ def show_patterns(tag,u,tstep,snr):
     plt.clim(-1,1)
 
 def get_mech_param(fs_list,dx,library,reg='lasso'):
-    
+    """
+    Estimate PDE parameters from data using regression.
+
+    Parameters:
+        fs_list (np.ndarray): Array of sampled states.
+        dx (float): Spatial step size.
+        library (list): List of functions for feature construction.
+        reg (str): Regression type ('lasso' or 'ridge').
+
+    Returns:
+        tuple: (param_u_model, param_v_model) regression models for u and v.
+    """
     delta_uv = fs_list[1:,:,1:-1, 1:-1] - fs_list[0:-1,:,1:-1, 1:-1]
     delta_u = delta_uv[:,0,np.newaxis,:,:].reshape(-1)[:,np.newaxis]
     delta_v = delta_uv[:,1,np.newaxis,:,:].reshape(-1)[:,np.newaxis]
@@ -178,9 +244,29 @@ def get_mech_param(fs_list,dx,library,reg='lasso'):
     return param_u_model, param_v_model
 
 def besttrial_reruns_unpack(args):
+    """
+    Unpack arguments for multiprocessing reruns.
+
+    Parameters:
+        args (tuple): Arguments for besttrial_reruns.
+
+    Returns:
+        dict: Combined metrics from rerun.
+    """
     return besttrial_reruns(*args)
 
 def besttrial_reruns(i,snr,best_trial):
+    """
+    Rerun the best trial and compute similarity metrics.
+
+    Parameters:
+        i (int): Rerun index.
+        snr (str): SNR identifier.
+        best_trial (str): Best trial ID.
+
+    Returns:
+        dict: Combined metrics (MAE, SSIM, histogram) for the rerun.
+    """
     exp_path = './Experiments/{}/'.format(snr)
     size = 60
     dt = 0.001
@@ -296,20 +382,43 @@ def besttrial_reruns(i,snr,best_trial):
     return combined_metrics
 
 def parallel_runs(num_reruns,num_processors,snr,best_id):
-        p=mp.Pool(processes = num_processors)
-        try:
-            results = [p.apply_async(besttrial_reruns,args=(i,snr,best_id,)) for i in range(num_reruns)]
-        except Exception as e:
-            print(f'Failed with: {e}')
-        p.close()
-        p.join()
+    """
+    Run multiple reruns in parallel.
 
-        out = [result.get() for result in results]
-        print(out)
+    Parameters:
+        num_reruns (int): Number of reruns.
+        num_processors (int): Number of processors to use.
+        snr (str): SNR identifier.
+        best_id (str): Best trial ID.
 
-        return out
+    Returns:
+        list: List of combined metrics from all reruns.
+    """
+    p=mp.Pool(processes = num_processors)
+    try:
+        results = [p.apply_async(besttrial_reruns,args=(i,snr,best_id,)) for i in range(num_reruns)]
+    except Exception as e:
+        print(f'Failed with: {e}')
+    p.close()
+    p.join()
+
+    out = [result.get() for result in results]
+    print(out)
+
+    return out
 
 def get_best_trial(snr,exp_path,num_trials):
+    """
+    Find the best trial based on MAE metric.
+
+    Parameters:
+        snr (str): SNR identifier.
+        exp_path (str): Path to experiment data.
+        num_trials (int): Number of trials.
+
+    Returns:
+        str: Best trial ID.
+    """
     combined_metrics = {}
     size = 60
     dt = 0.001
@@ -467,6 +576,17 @@ def get_best_trial(snr,exp_path,num_trials):
     return best_id
 
 def get_pics_and_pde_params(best_id,snr,exp_path):
+    """
+    Generate and save pattern images and estimate PDE parameters for the best trial.
+
+    Parameters:
+        best_id (str): Best trial ID.
+        snr (str): SNR identifier.
+        exp_path (str): Path to experiment data.
+
+    Returns:
+        None
+    """
     size = 60
     dt = 0.001
     out_sample = 1.0
@@ -616,6 +736,17 @@ def get_pics_and_pde_params(best_id,snr,exp_path):
 
 
 def get_exp_design(snr,exp_path,num_trials):
+    """
+    Collect and save experimental design parameters for all trials.
+
+    Parameters:
+        snr (str): SNR identifier.
+        exp_path (str): Path to experiment data.
+        num_trials (int): Number of trials.
+
+    Returns:
+        None
+    """
     parameters = pd.DataFrame()
     for i in range(num_trials):
         if i<10:
