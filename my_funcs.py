@@ -176,7 +176,7 @@ def hist_img_comp(img1, img2):
     bins = 10
     return np.round(cv2.compareHist(np.asarray(np.histogram(img1,range=(-1,1),bins=bins)[0]).reshape(bins,1).astype('float32'), np.asarray(np.histogram(img2,range=(-1,1),bins=bins)[0]).reshape(bins,1).astype('float32'),cv2.HISTCMP_CORREL),3)
 
-def show_patterns(tag,u,tstep,snr):
+def show_patterns(tag,u,tstep,exp):
     """
     Display and save pattern images for simulation or observation.
 
@@ -184,7 +184,7 @@ def show_patterns(tag,u,tstep,snr):
         tag (str): 'sim' for simulation, 'obs' for observation.
         u (np.ndarray): Image data.
         tstep (int): Time step.
-        snr (str): SNR identifier for saving.
+        exp (str): Experiment identifier for saving.
     """
     plt.figure(figsize=(8, 8))
     plt.gca().set_axis_off()
@@ -198,7 +198,7 @@ def show_patterns(tag,u,tstep,snr):
                     interpolation='bilinear',
                     extent=[-1, 1, -1, 1])
             plt.axis('off')
-            plt.savefig('./Visualizations/{}/simresult_tstep{}.png'.format(snr,tstep))
+            plt.savefig('./Visualizations/{}/simresult_tstep{}.png'.format(exp,tstep))
         except:
             print("Errors!!!!")
     elif tag=='obs':
@@ -207,7 +207,7 @@ def show_patterns(tag,u,tstep,snr):
                     interpolation='bilinear',
                     extent=[-1, 1, -1, 1])
             plt.axis('off')
-            plt.savefig('./Visualizations/{}/obsresult_tstep{}.png'.format(snr,tstep))
+            plt.savefig('./Visualizations/{}/obsresult_tstep{}.png'.format(exp,tstep))
         except:
             print("Errors!!!!")
     else:
@@ -269,20 +269,20 @@ def besttrial_reruns_unpack(args):
     """
     return besttrial_reruns(*args)
 
-def besttrial_reruns(i,snr,best_trial, config=None):
+def besttrial_reruns(i,exp,best_trial, config=None):
     """
     Rerun the best trial and compute similarity metrics.
 
     Parameters:
         i (int): Rerun index.
-        snr (str): SNR identifier.
+        exp (str): Experiment identifier.
         best_trial (str): Best trial ID.
         config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
     Returns:
         dict: Combined metrics (MAE, SSIM, histogram) for the rerun.
     """
-    exp_path = './Experiments/{}/'.format(snr)
+    exp_path = './Experiments/{}/'.format(exp)
     size = 60
     dt = 0.001
     out_sample=1.0
@@ -403,14 +403,14 @@ def besttrial_reruns(i,snr,best_trial, config=None):
 
     return combined_metrics
 
-def parallel_runs(num_reruns,num_processors,snr,best_id):
+def parallel_runs(num_reruns,num_processors,exp,best_id):
     """
     Run multiple reruns in parallel.
 
     Parameters:
         num_reruns (int): Number of reruns.
         num_processors (int): Number of processors to use.
-        snr (str): SNR identifier.
+        exp (str): Experiment identifier.
         best_id (str): Best trial ID.
 
     Returns:
@@ -418,7 +418,7 @@ def parallel_runs(num_reruns,num_processors,snr,best_id):
     """
     p=mp.Pool(processes = num_processors)
     try:
-        results = [p.apply_async(besttrial_reruns,args=(i,snr,best_id,)) for i in range(num_reruns)]
+        results = [p.apply_async(besttrial_reruns,args=(i,exp,best_id,)) for i in range(num_reruns)]
     except Exception as e:
         print(f'Failed with: {e}')
     p.close()
@@ -429,12 +429,12 @@ def parallel_runs(num_reruns,num_processors,snr,best_id):
 
     return out
 
-def get_best_trial(snr,exp_path,num_trials, config=None):
+def get_best_trial(exp, exp_path, num_trials, config=None):
     """
     Find the best trial based on MAE metric.
 
     Parameters:
-        snr (str): SNR identifier.
+        exp (str): Experiment identifier.
         exp_path (str): Path to experiment data.
         num_trials (int): Number of trials.
         config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
@@ -514,11 +514,10 @@ def get_best_trial(snr,exp_path,num_trials, config=None):
         ae, pipeline = net.pipeline(params)
         try:
             pipeline.load_weights(exp_path+"Realizations/"+curr_id+"_pipeline.h5")
-            # pipeline.load_weights("Experiments/Realizations/"+snr+"/"+curr_id+"_pipeline.h5")
         except:
             continue
         
-        exp_data_path = exp_path+'sim_data/training/'#+snr+"/"
+        exp_data_path = exp_path+'sim_data/training/'
 
 
         x_dot_abs_0_max = np.load(exp_data_path+'x_dot_abs_0_max.npy')
@@ -588,7 +587,7 @@ def get_best_trial(snr,exp_path,num_trials, config=None):
         
         combined_metrics[curr_id] = {'mae':mae_l[-1],'ssim':ssim_l[-1],'hist':hist_l[-1]}
 
-    with open(exp_path+"combined_metrics_{}.json".format(snr), "w") as fp:
+    with open(exp_path+"combined_metrics_{}.json".format(exp), "w") as fp:
         json.dump(combined_metrics, fp)
 
     metric = 'mae'
@@ -599,18 +598,18 @@ def get_best_trial(snr,exp_path,num_trials, config=None):
             best = value[metric]
             best_id = key
 
-    with open(exp_path+"besttrial_{}.txt".format(snr), "w") as fp2:
+    with open(exp_path+"besttrial_{}.txt".format(exp), "w") as fp2:
         fp2.writelines([best_id])
 
     return best_id
 
-def get_pics_and_pde_params(best_id,snr,exp_path, config=None):
+def get_pics_and_pde_params(best_id,exp,exp_path, config=None):
     """
     Generate and save pattern images and estimate PDE parameters for the best trial.
 
     Parameters:
         best_id (str): Best trial ID.
-        snr (str): SNR identifier.
+        exp (str): Experiment identifier.
         exp_path (str): Path to experiment data.
         config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
@@ -670,9 +669,8 @@ def get_pics_and_pde_params(best_id,snr,exp_path, config=None):
 
     ae, pipeline = net.pipeline(params)
     pipeline.load_weights(exp_path+"Realizations/"+curr_id+"_pipeline.h5")
-    # pipeline.load_weights("Experiments/Realizations/"+snr+"/"+curr_id+"_pipeline.h5")
 
-    exp_data_path = exp_path+'sim_data/training/'#+snr+"/"
+    exp_data_path = exp_path+'sim_data/training/'
 
     x_dot_abs_0_max = np.load(exp_data_path+'x_dot_abs_0_max.npy')
     x_dot_abs_1_max = np.load(exp_data_path+'x_dot_abs_1_max.npy')
@@ -720,11 +718,11 @@ def get_pics_and_pde_params(best_id,snr,exp_path, config=None):
 
     for i in range(0,int(tsteps/out_sample+1)):
         if (i+1)%int(1/out_sample)==0:
-            show_patterns('sim',fs_sim_list[i][:,:,0],int(i*out_sample),snr)
+            show_patterns('sim',fs_sim_list[i][:,:,0],int(i*out_sample),exp)
 
     for i in range(0,int(tsteps/out_sample+1)):
         if (i+1)%int(1/out_sample)==0:
-            show_patterns('obs',fs_obs_list[i][0,:,:],int(i*out_sample),snr)
+            show_patterns('obs',fs_obs_list[i][0,:,:],int(i*out_sample),exp)
 
     library = [
         lambda x,y : np.ones((x.shape[0],1)),
@@ -774,15 +772,15 @@ def get_pics_and_pde_params(best_id,snr,exp_path, config=None):
     param_table['U_origin'] = [2.8e-4,0,5e-3,1,-1,0,0,0,0,0,0,-1,0,0,0,0,0,0]
     param_table['V_origin'] = [0,5e-2,0,10,-10,0,0,0,0,0,0,0,0,0,0,0,0,0]
     param_table = param_table.fillna(0)
-    param_table.to_csv('./Visualizations/{}/PDE_param.csv'.format(snr),index=False)
+    param_table.to_csv('./Visualizations/{}/PDE_param.csv'.format(exp),index=False)
 
 
-def get_exp_design(snr,exp_path,num_trials):
+def get_exp_design(exp,exp_path,num_trials):
     """
     Collect and save experimental design parameters for all trials.
 
     Parameters:
-        snr (str): SNR identifier.
+        exp (str): Experiment identifier.
         exp_path (str): Path to experiment data.
         num_trials (int): Number of trials.
 
@@ -805,4 +803,4 @@ def get_exp_design(snr,exp_path,num_trials):
         first_column = best_parameters.pop('trial_id')
         best_parameters.insert(0, 'trial_id', first_column)
         parameters = parameters.append(best_parameters)
-    parameters.to_csv(exp_path+'experimental_design_{}.csv'.format(snr),index=False)
+    parameters.to_csv(exp_path+'experimental_design_{}.csv'.format(exp),index=False)

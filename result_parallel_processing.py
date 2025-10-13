@@ -13,7 +13,7 @@ if os.path.exists('config_params.json'):
 experiments = []
 
 for equil_order in config.get("equil_order_l", [-0.5,-1.0,-1.6,-1.8,-2.0,-2.2]):
-        exp_name = 'equil_1e-{}'.format(equil_order)
+        exp_name = 'equil_1e{}'.format(equil_order)
         experiments.append(exp_name)
 
 for sparsity in config.get("sparsity_l", [10,30,40,50,80]):
