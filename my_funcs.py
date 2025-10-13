@@ -26,7 +26,7 @@ def laplacian(X, dx):
     center = X[1:-1, 1:-1]
     return (top + left + bottom + right - 4 * center) / dx**2
 
-def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1.0):
+def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1.0, config=None):
     """
     Simulate a reaction-diffusion PDE using finite differences and return sampled states.
 
@@ -35,6 +35,7 @@ def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1.0):
         T (float): Total simulation time.
         dt (float): Time step interval.
         out_sample (float): Sampling interval.
+        config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
     Returns:
         np.ndarray: Array of sampled states [u, v] over time.
@@ -43,6 +44,12 @@ def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1.0):
     b = 5e-3
     tau = .1
     k = -.005
+
+    if config is not None:
+        a = config.get("a", a)
+        b = config.get("b", b)
+        tau = config.get("tau", tau)
+        k = config.get("k", k)
 
     dx = 2. / size  # space step
     n = int(T / dt)  # number of iterations
@@ -89,7 +96,7 @@ def pde_rd_for_data(size=100, T=20.0, dt=0.001, out_sample=1.0):
 
     return np.asarray(fs_list)
 
-def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1.0):
+def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1.0, config=None):
     """
     Simulate a reaction-diffusion PDE from given initial conditions.
 
@@ -100,6 +107,7 @@ def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1.0):
         T (float): Total simulation time.
         dt (float): Time step interval.
         out_sample (float): Sampling interval.
+        config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
     Returns:
         np.ndarray: Array of sampled states [u, v] over time.
@@ -108,6 +116,12 @@ def my_pde_rd(u,v,size=100, T=20.0, dt=0.001, out_sample=1.0):
     b = 5e-3
     tau = .1
     k = -.005
+
+    if config is not None:
+        a = config.get("a", a)
+        b = config.get("b", b)
+        tau = config.get("tau", tau)
+        k = config.get("k", k)
 
     dx = 2. / size  # space step
     n = int(T / dt)  # number of iterations
@@ -255,7 +269,7 @@ def besttrial_reruns_unpack(args):
     """
     return besttrial_reruns(*args)
 
-def besttrial_reruns(i,snr,best_trial):
+def besttrial_reruns(i,snr,best_trial, config=None):
     """
     Rerun the best trial and compute similarity metrics.
 
@@ -263,6 +277,7 @@ def besttrial_reruns(i,snr,best_trial):
         i (int): Rerun index.
         snr (str): SNR identifier.
         best_trial (str): Best trial ID.
+        config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
     Returns:
         dict: Combined metrics (MAE, SSIM, histogram) for the rerun.
@@ -272,6 +287,13 @@ def besttrial_reruns(i,snr,best_trial):
     dt = 0.001
     out_sample=1.0
     tsteps = 8
+
+    if config is not None:
+        size = config.get("size", size)
+        dt = config.get("dt", dt)
+        out_sample = config.get("out_sample", out_sample)
+        tsteps = config.get("tsteps", tsteps)
+
     
     combined_metrics = {}
     u = np.random.rand(size, size)
@@ -285,7 +307,7 @@ def besttrial_reruns(i,snr,best_trial):
     sim_uv[:, -1, :] = sim_uv[:, -2, :]
     sim_uv_obs = sim_uv.copy()
 
-    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size,tsteps,dt,out_sample=out_sample)
+    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size,tsteps,dt,out_sample=out_sample, config=config)
 
 
     try:
@@ -407,7 +429,7 @@ def parallel_runs(num_reruns,num_processors,snr,best_id):
 
     return out
 
-def get_best_trial(snr,exp_path,num_trials):
+def get_best_trial(snr,exp_path,num_trials, config=None):
     """
     Find the best trial based on MAE metric.
 
@@ -415,6 +437,7 @@ def get_best_trial(snr,exp_path,num_trials):
         snr (str): SNR identifier.
         exp_path (str): Path to experiment data.
         num_trials (int): Number of trials.
+        config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
     Returns:
         str: Best trial ID.
@@ -424,6 +447,12 @@ def get_best_trial(snr,exp_path,num_trials):
     dt = 0.001
     out_sample=1.0
     tsteps = 8
+
+    if config is not None:
+        size = config.get("size", size)
+        dt = config.get("dt", dt)
+        out_sample = config.get("out_sample", out_sample)
+        tsteps = config.get("tsteps", tsteps)
 
     u = np.random.rand(size, size)
     v = np.random.rand(size, size)
@@ -436,7 +465,7 @@ def get_best_trial(snr,exp_path,num_trials):
     sim_uv[:, -1, :] = sim_uv[:, -2, :]
     sim_uv_obs = sim_uv.copy()
     # fs_obs_list = pde_rd_grayscott(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size,tsteps,dt,out_sample=out_sample)
-    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size,tsteps,dt,out_sample=out_sample)
+    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size,tsteps,dt,out_sample=out_sample, config=config)
 
     for i in range(num_trials):
         # print('Analyzing Trial Number {}'.format(i))
@@ -575,7 +604,7 @@ def get_best_trial(snr,exp_path,num_trials):
 
     return best_id
 
-def get_pics_and_pde_params(best_id,snr,exp_path):
+def get_pics_and_pde_params(best_id,snr,exp_path, config=None):
     """
     Generate and save pattern images and estimate PDE parameters for the best trial.
 
@@ -583,6 +612,7 @@ def get_pics_and_pde_params(best_id,snr,exp_path):
         best_id (str): Best trial ID.
         snr (str): SNR identifier.
         exp_path (str): Path to experiment data.
+        config (dict, optional): Dictionary of PDE parameters (a, b, tau, k, size, dt, out_sample, tsteps).
 
     Returns:
         None
@@ -591,6 +621,12 @@ def get_pics_and_pde_params(best_id,snr,exp_path):
     dt = 0.001
     out_sample = 1.0
     tsteps = 8
+
+    if config is not None:
+        size = config.get("size", size)
+        dt = config.get("dt", dt)
+        out_sample = config.get("out_sample", out_sample)
+        tsteps = config.get("tsteps", tsteps)
 
     init_uv = np.random.rand(size, size,2)
 
@@ -601,7 +637,7 @@ def get_pics_and_pde_params(best_id,snr,exp_path):
     sim_uv_obs = init_uv.copy()
 
     # fs_obs_list = pde_rd_grayscott(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size=size,T=tsteps,dt=dt,out_sample=out_sample)
-    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size=size,T=tsteps,dt=dt,out_sample=out_sample)
+    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size=size,T=tsteps,dt=dt,out_sample=out_sample, config=config)
 
     curr_id = best_id# 
     f = open(exp_path+'tmp/untitled_project/'+'{}/trial.json'.format(curr_id))
@@ -714,9 +750,15 @@ def get_pics_and_pde_params(best_id,snr,exp_path):
     out_sample = 1
     tsteps = 8
 
+    if config is not None:
+        size = config.get("size", size)
+        dt = config.get("dt", dt)
+        out_sample = config.get("out_sample", out_sample)
+        tsteps = config.get("tsteps", tsteps)
+
     sim_uv_obs = init_uv.copy()
 
-    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size=size,T=tsteps,dt=dt,out_sample=out_sample)
+    fs_obs_list = my_pde_rd(sim_uv_obs[:,:,0],sim_uv_obs[:,:,1],size=size,T=tsteps,dt=dt,out_sample=out_sample, config=config)
 
     out_samples=out_sample
     reg_type = 'lasso'
