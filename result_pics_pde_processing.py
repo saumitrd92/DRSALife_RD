@@ -4,19 +4,36 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import json
 
-experiments = ['equil_1e-0.5','equil_1e-1.0','equil_1e-1.6','equil_1e-1.8','equil_1e-2.0','equil_1e-2.2','snr1','snr10','snr25','snr30','snr35','snr100','sparse10','sparse30','sparse40','sparse50','sparse80']
-num_processors = 8
+if os.path.exists('config_params.json'):
+    config = json.load(open('config_params.json'))
 
-def all_func(snr):
-    exp_path = './Experiments/{}/'.format(snr)
-    num_trials = 50
+experiments = []
 
-    my_funcs.get_exp_design(snr,exp_path,num_trials)
+for equil_order in config.get("equil_order_l", [-0.5,-1.0,-1.6,-1.8,-2.0,-2.2]):
+        exp_name = 'equil_1e-{}'.format(equil_order)
+        experiments.append(exp_name)
 
-    best_id = my_funcs.get_best_trial(snr,exp_path,num_trials)
+for sparsity in config.get("sparsity_l", [10,30,40,50,80]):
+    exp_name = 'sparse{}'.format(sparsity)
+    experiments.append(exp_name)
 
-    my_funcs.get_pics_and_pde_params(best_id,snr,exp_path)
+for snr in config.get("snr_l", [1,10,25,30,35,100]):
+    exp_name = 'snr{}'.format(snr)
+    experiments.append(exp_name)
+
+num_processors = config.get("num_processors", 8)
+
+def all_func(exp):
+    exp_path = './Experiments/{}/'.format(exp)
+    num_trials = config.get("num_trials", 50)
+
+    my_funcs.get_exp_design(exp,exp_path,num_trials)
+
+    best_id = my_funcs.get_best_trial(exp,exp_path,num_trials)
+
+    my_funcs.get_pics_and_pde_params(best_id,exp,exp_path)
 
 if __name__ == '__main__':
         p=mp.Pool(processes = num_processors)

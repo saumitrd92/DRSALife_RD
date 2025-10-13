@@ -1,19 +1,37 @@
+import os
 import pandas as pd
 import numpy as np
 import my_funcs
+import json
+
+if os.path.exists('config_params.json'):
+    config = json.load(open('config_params.json'))
 
 nb_cases=10
-size_l = [60]*nb_cases
+size = 60
 t = 25
 dt = 0.001
-out_samples=[1.0]*nb_cases
+out_sample = 1.0
 snr_l = [1,10,25,30,35,100]
 sparsity_l = [10,30,40,50,80]
 equil_order_l = [-0.5,-1.0,-1.6,-1.8,-2.0,-2.2]
+
+# Overwrite default parameters if specified in config file
+nb_cases = config.get("nb_cases", nb_cases)
+size = config.get("size", size)
+size_l = [size]*nb_cases
+t = config.get("t", t)
+dt = config.get("dt", dt)
+out_sample = config.get("out_sample", out_sample)
+out_samples = [out_sample]*nb_cases
+snr_l = config.get("snr_l", snr_l)
+sparsity_l = config.get("sparsity_l", sparsity_l)
+equil_order_l = config.get("equil_order_l", equil_order_l)
+
 for exp_type in ['noise','sparse','equil']:
     for case in range(1,nb_cases+1):
         size = size_l[case-1]
-        fs_list = my_funcs.pde_rd_for_data(size,T=t,dt=dt,out_sample=out_samples[case-1])
+        fs_list = my_funcs.pde_rd_for_data(size,T=t,dt=dt,out_sample=out_samples[case-1], config=config)
         fsl_shape = fs_list.shape
         
         if exp_type == 'equil':

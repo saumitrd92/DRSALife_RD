@@ -97,7 +97,6 @@ class MyTuner(keras_tuner.RandomSearch):
 
         return training_code(params)
 
-# np.random.seed(30091992)
 tuner = MyTuner(max_trials=50, overwrite=False, directory='tmp')
 
 tuner.search(callbacks=[TensorBoard(log_dir="logs/fit/")])
