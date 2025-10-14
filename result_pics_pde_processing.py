@@ -35,6 +35,8 @@ def all_func(exp):
 
     my_funcs.get_pics_and_pde_params(best_id,exp,exp_path)
 
+    print('Finished processing for experiment:', exp)
+
 if __name__ == '__main__':
         p=mp.Pool(processes = num_processors)
         try:
