@@ -245,8 +245,8 @@ def get_mech_param(fs_list,dx,library,reg='lasso'):
     theta = np.concatenate((temp_lapl_u, temp_lapl_v, np.asarray(l).transpose(1,0,2)[:,:,0]), axis=-1)
 
     if reg=='lasso':
-        param_u_model = linear_model.Lasso(alpha=5e-4,fit_intercept=False,max_iter=100000,tol=1e-6)
-        param_v_model = linear_model.Lasso(alpha=5e-4,fit_intercept=False,max_iter=100000,tol=1e-6)
+        param_u_model = linear_model.Lasso(alpha=5e-4,fit_intercept=False,max_iter=100000)
+        param_v_model = linear_model.Lasso(alpha=5e-4,fit_intercept=False,max_iter=100000)
     else:
         param_u_model = linear_model.Ridge(alpha=1.0,fit_intercept=False,max_iter=100000)
         param_v_model = linear_model.Ridge(alpha=1.0,fit_intercept=False,max_iter=100000)
@@ -769,6 +769,12 @@ def get_pics_and_pde_params(best_id,exp,exp_path, config=None):
     param_table['U_sim'] = np.asarray(param_u_sim.coef_).flatten()/out_samples
     param_table['V_obs'] = np.asarray(param_v_obs.coef_).flatten()/out_samples
     param_table['V_sim'] = np.asarray(param_v_sim.coef_).flatten()/out_samples
+
+    param_table['U_obs'] = param_table['U_obs'].round(5)
+    param_table['U_sim'] = param_table['U_sim'].round(5)
+    param_table['V_obs'] = param_table['V_obs'].round(5)
+    param_table['V_sim'] = param_table['V_sim'].round(5)
+
     param_table['U_origin'] = [2.8e-4,0,5e-3,1,-1,0,0,0,0,0,0,-1,0,0,0,0,0,0]
     param_table['V_origin'] = [0,5e-2,0,10,-10,0,0,0,0,0,0,0,0,0,0,0,0,0]
     param_table = param_table.fillna(0)
